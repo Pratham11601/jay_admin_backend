@@ -4,8 +4,8 @@ const Leads = {
   // ✅ Create a new lead
   create: async (leadData) => {
     try {
-      const sql = `INSERT INTO Lead (date, vendor_id, vendor_name, location_from, location_from_area, car_model, add_on, fare, to_location, to_location_area, time, vendor_contact, vendor_cat) 
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      const sql = `INSERT INTO \`Lead\` (date, vendor_id, vendor_name, location_from, location_from_area, car_model, add_on, fare, to_location, to_location_area, time, vendor_contact, vendor_cat) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const values = [
         leadData.date, leadData.vendor_id, leadData.vendor_name, leadData.location_from,
         leadData.location_from_area, leadData.car_model, leadData.add_on, leadData.fare,
@@ -23,7 +23,8 @@ const Leads = {
   // ✅ Get all leads with search and pagination
   getAll: async ({ page, limit, search, receivedOn, tripDate }) => {
     try {
-      let sql = `SELECT * FROM Lead WHERE 1=1`;
+      let sql = `SELECT * FROM \`Lead\` WHERE 1=1`;
+
       let values = [];
 
       // 🔹 Search feature
@@ -59,7 +60,8 @@ const Leads = {
   // ✅ Get lead by ID
   getById: async (id) => {
     try {
-      const sql = `SELECT * FROM Lead WHERE id = ?`;
+      const sql = `SELECT * FROM \`Lead\` WHERE id = ?`;
+
       const [rows] = await pool.execute(sql, [id]); // Execute query
       return rows.length > 0 ? rows[0] : null;
     } catch (error) {
@@ -70,7 +72,8 @@ const Leads = {
   // ✅ Update lead
   update: async (id, leadData) => {
     try {
-      const sql = `UPDATE Lead SET date = ?, vendor_id = ?, vendor_name = ?, location_from = ?, location_from_area = ?, car_model = ?, add_on = ?, fare = ?, to_location = ?, to_location_area = ?, time = ?, vendor_contact = ?, vendor_cat = ? WHERE id = ?`;
+      const sql = `UPDATE \`Lead\` SET date = ?, vendor_id = ?, vendor_name = ?, location_from = ?, location_from_area = ?, car_model = ?, add_on = ?, fare = ?, to_location = ?, to_location_area = ?, time = ?, vendor_contact = ?, vendor_cat = ? WHERE id = ?`;
+      // const sql = `UPDATE Lead SET date = ?, vendor_id = ?, vendor_name = ?, location_from = ?, location_from_area = ?, car_model = ?, add_on = ?, fare = ?, to_location = ?, to_location_area = ?, time = ?, vendor_contact = ?, vendor_cat = ? WHERE id = ?`;
       const values = [
         leadData.date, leadData.vendor_id, leadData.vendor_name, leadData.location_from,
         leadData.location_from_area, leadData.car_model, leadData.add_on, leadData.fare,
@@ -88,7 +91,7 @@ const Leads = {
   // ✅ Delete lead
   delete: async (id) => {
     try {
-      const sql = `DELETE FROM Lead WHERE id = ?`;
+      const sql = `DELETE FROM \`Lead\` WHERE id = ?`;
       const [result] = await pool.execute(sql, [id]); // Execute query
       return result.affectedRows > 0 ? { message: "Lead deleted successfully" } : null;
     } catch (error) {
