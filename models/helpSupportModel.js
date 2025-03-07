@@ -19,8 +19,9 @@ exports.getAll = async (search, page, limit) => {
     const [data] = await db.query(query, [searchQuery, searchQuery, searchQuery, searchQuery, limit, offset]);
     const [totalResult] = await db.query(totalQuery, [searchQuery, searchQuery, searchQuery, searchQuery]);
 
-    return { total: totalResult[0].total, helpSupport: data };
+    return { total: totalResult[0]?.total || 0, helpSupport: data };
   } catch (error) {
+    console.error("Error in getAll:", error);
     throw error;
   }
 };
@@ -31,6 +32,7 @@ exports.getById = async (id) => {
     const [data] = await db.query("SELECT * FROM help_supports WHERE id = ?", [id]);
     return data.length ? data[0] : null;
   } catch (error) {
+    console.error("Error in getById:", error);
     throw error;
   }
 };
@@ -41,12 +43,15 @@ exports.addHelpSupport = async (data) => {
     const { query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark, remark_date } = data;
 
     const [result] = await db.query(
-      "INSERT INTO help_supports (query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark, remark_date, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-      [query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark || "", remark_date || new Date()]
+      `INSERT INTO help_supports 
+      (query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark, remark_date, createdAt, updatedAt) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark || "No remarks", remark_date || null]
     );
 
     return result.insertId;
   } catch (error) {
+    console.error("Error in addHelpSupport:", error);
     throw error;
   }
 };
@@ -57,12 +62,15 @@ exports.updateHelpSupport = async (id, data) => {
     const { query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark, remark_date } = data;
 
     const [result] = await db.query(
-      "UPDATE help_supports SET query_message = ?, vendor_category = ?, vendor_id = ?, vendor_contact = ?, vendor_name = ?, remark = ?, remark_date = ?, updatedAt = NOW() WHERE id = ?",
-      [query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark, remark_date, id]
+      `UPDATE help_supports 
+      SET query_message = ?, vendor_category = ?, vendor_id = ?, vendor_contact = ?, vendor_name = ?, remark = ?, remark_date = ?, updatedAt = NOW() 
+      WHERE id = ?`,
+      [query_message, vendor_category, vendor_id, vendor_contact, vendor_name, remark || "No remarks", remark_date || null, id]
     );
 
     return result.affectedRows > 0;
   } catch (error) {
+    console.error("Error in updateHelpSupport:", error);
     throw error;
   }
 };
@@ -73,6 +81,22 @@ exports.deleteById = async (id) => {
     const [result] = await db.query("DELETE FROM help_supports WHERE id = ?", [id]);
     return result.affectedRows > 0;
   } catch (error) {
+    console.error("Error in deleteById:", error);
+    throw error;
+  }
+};
+
+// ✅ Add Remark to an Existing Query
+exports.addRemark = async (id, remark) => {
+  try {
+    const [result] = await db.query(
+      `UPDATE help_supports SET remark = ?, remark_date = NOW(), updatedAt = NOW() WHERE id = ?`,
+      [remark, id]
+    );
+
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error("Error in addRemark:", error);
     throw error;
   }
 };

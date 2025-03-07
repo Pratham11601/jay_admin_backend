@@ -21,48 +21,40 @@ const Leads = {
   },
 
   // ✅ Get all leads with search and pagination
-getAll: async ({ page, limit, search, receivedOn, tripDate }) => {
-  try {
-    let sql = `SELECT * FROM leads WHERE 1=1`;
-    let values = [];
+  getAll: async ({ page, limit, search, receivedOn, tripDate }) => {
+    try {
+      let sql = `SELECT * FROM leads WHERE 1=1`;
+      let values = [];
 
-    // 🔹 Search feature
-    if (search && search.trim()) {
-      sql += ` AND (vendor_name LIKE ? OR vendor_contact LIKE ? OR location_from LIKE ? OR to_location LIKE ? OR vendor_cat LIKE ?)`;
-      const searchPattern = `%${search}%`;
-      values.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      // 🔹 Search feature
+      if (search) {
+        sql += ` AND (vendor_name LIKE ? OR vendor_contact LIKE ? OR location_from LIKE ? OR to_location LIKE ? OR vendor_cat LIKE ?)`;
+        const searchPattern = `%${search}%`;
+        values.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      }
+
+      // 🔹 Filter by "Received On"
+      if (receivedOn) {
+        sql += ` AND createdAt >= ?`;
+        values.push(receivedOn);
+      }
+
+      // 🔹 Filter by "Trip Date"
+      if (tripDate) {
+        sql += ` AND date = ?`;
+        values.push(tripDate);
+      }
+
+      // 🔹 Pagination
+      sql += ` ORDER BY createdAt DESC LIMIT ?, ?`;
+      values.push((page - 1) * limit, parseInt(limit));
+
+      const [rows] = await pool.execute(sql, values); // Execute query
+      return rows;
+    } catch (error) {
+      throw new Error("Error fetching leads: " + error.message);
     }
-
-    // 🔹 Filter by "Received On"
-    if (receivedOn) {
-      sql += ` AND createdAt >= ?`;
-      values.push(receivedOn);
-    }
-
-    // 🔹 Filter by "Trip Date"
-    if (tripDate) {
-      sql += ` AND date = ?`;
-      values.push(tripDate);
-    }
-
-    // 🔹 Pagination
-    sql += ` ORDER BY createdAt DESC LIMIT ?, ?`;
-    values.push((page - 1) * limit, parseInt(limit));
-
-    console.log('Executing SQL:', sql);
-    console.log('With values:', values);
-
-    const [rows] = await pool.execute(sql, values); // Execute query
-    return rows.length > 0 ? rows : []; // Return empty array if no leads found
-  } catch (error) {
-    throw new Error("Error fetching leads due to: " + error.message);
-  }
-},
-
-
-
-
-
+  },
 
   // ✅ Get lead by ID
   getById: async (id) => {

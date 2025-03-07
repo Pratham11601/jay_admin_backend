@@ -1,18 +1,22 @@
 const mysql = require("mysql2/promise"); // Use mysql2's promise-based API
+const dotenv = require("dotenv");
 
+dotenv.config();
 
-
-
+// Create a MySQL connection pool
 const pool = mysql.createPool({
-  host: "127.0.0.1",
-  user:  "root",
-  password:  "Sync@116",
-  database:  "sync_quickcab_db",
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "quick_cab",
+  waitForConnections: true,
   connectionLimit: 10, // Max concurrent connections
   queueLimit: 0, // No limit for queued connections
 });
 
 // Test database connection
+// Test database connection
+
 (async () => {
   try {
     const connection = await pool.getConnection();

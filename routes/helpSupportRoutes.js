@@ -306,4 +306,69 @@ router.put("/:id", helpSupportController.updateHelpSupport);
  */
 router.delete("/:id", helpSupportController.deleteHelpSupport);
 
+/**
+ * @swagger
+ * /api/help-support/{id}/remark:
+ *   post:
+ *     summary: Add a remark to an existing help support query
+ *     tags: [Help Support]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The unique ID of the help support query
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - remark
+ *               - remark_date
+ *             properties:
+ *               remark:
+ *                 type: string
+ *                 example: "Issue resolved by updating API keys"
+ *               remark_date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2025-03-07"
+ *     responses:
+ *       200:
+ *         description: Remark added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Remark added successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 5
+ *                     remark:
+ *                       type: string
+ *                       example: "Issue resolved by updating API keys"
+ *                     remark_date:
+ *                       type: string
+ *                       format: date
+ *                       example: "2025-03-07"
+ *       400:
+ *         description: Invalid request body
+ *       404:
+ *         description: Help support query not found
+ */
+router.post("/:id/remark", helpSupportController.addRemark);
+
+
 module.exports = router;

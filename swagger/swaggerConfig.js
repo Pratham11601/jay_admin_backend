@@ -5,36 +5,23 @@ const path = require("path");
 
 dotenv.config();
 
-const PORT =  5000;
-const BASE_URL =  `http://localhost:${PORT}`;
-var live_server = `https://quickcabpune.com/admin`;
-
-
-
+const PORT = process.env.PORT || 5000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Admin Panel APIs Docs For Quick Cab Services ",
-      version: "1.0.7",
+      title: "Admin Panel API",
+      version: "1.0.0",
       description: "API documentation for Admin Panel",
       contact: {
-        name: "Sync Solutions Pune"
+        name: "Support Team",
+        email: "support@example.com",
+        url: "http://example.com",
       },
     },
-
-    servers: [
-      {
-          description: 'Live Server',
-          url: live_server,
-      },
-      {
-          url: BASE_URL,
-          description: 'Local Server'
-      }
-  ],
-
+    servers: [{ url: BASE_URL }],
     components: {
       securitySchemes: {
         bearerAuth: {
