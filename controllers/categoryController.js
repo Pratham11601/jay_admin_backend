@@ -46,7 +46,7 @@ exports.getCategoryById = async (req, res) => {
   }
 };
 
-// Add new category
+// Add new category with duplicate check
 exports.addCategory = async (req, res) => {
   try {
     const { cat_name } = req.body;
@@ -54,10 +54,15 @@ exports.addCategory = async (req, res) => {
       return res.status(400).json({ success: false, message: "Category name is required" });
     }
 
+    // Call model function to add category
     const categoryId = await Category.addCategory(cat_name);
+
     res.status(201).json({ success: true, message: "Category added successfully", categoryId });
   } catch (error) {
     console.error("❌ Error adding category:", error.message);
+    if (error.message === "Category already exists") {
+      return res.status(400).json({ success: false, message: "Category already exists" });
+    }
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };

@@ -30,14 +30,22 @@ exports.getById = async (id) => {
   }
 };
 
-// Add a new category
+// Add a new category with duplicate check
 exports.addCategory = async (cat_name) => {
   try {
+    // Check if category already exists (case-insensitive)
+    const [existingCategory] = await db.execute("SELECT * FROM category WHERE LOWER(cat_name) = LOWER(?)", [cat_name]);
+    
+    if (existingCategory.length > 0) {
+      throw new Error("Category already exists");
+    }
+
+    // Insert new category
     const [result] = await db.execute("INSERT INTO category (cat_name) VALUES (?)", [cat_name]);
     return result.insertId;
   } catch (error) {
     console.error("❌ Error adding category:", error.message);
-    throw new Error("Database error while adding category.");
+    throw new Error(error.message); // Pass error message to controller
   }
 };
 

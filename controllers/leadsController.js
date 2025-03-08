@@ -14,14 +14,7 @@ exports.createLead = async (req, res) => {
 exports.getLeads = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "", receivedOn, tripDate } = req.query;
-    const leads = await Leads.getAll({ 
-      page: parseInt(page), 
-      limit: Math.min(parseInt(limit), 100), // Cap limit to 100
-      search, 
-      receivedOn, 
-      tripDate 
-    });
-    
+    const leads = await Leads.getAll({ page: parseInt(page), limit: parseInt(limit), search, receivedOn, tripDate });
     res.status(200).json({
       success: true,
       message: "Leads retrieved successfully",
@@ -31,7 +24,6 @@ exports.getLeads = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 // ✅ Get lead by ID
 exports.getLeadById = async (req, res) => {
