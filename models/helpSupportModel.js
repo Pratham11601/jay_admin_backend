@@ -1,6 +1,8 @@
 const db = require("../config/db");
 
 // ✅ Get all Help Support queries with pagination & search
+// ✅ Get all Help Support queries with pagination & search
+
 exports.getAll = async (search, page, limit) => {
   try {
     const offset = (page - 1) * limit;
