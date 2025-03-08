@@ -4,7 +4,8 @@ const Leads = {
   // Create a new lead
   create: async (leadData) => {
     try {
-      const sql = `INSERT INTO leads (date, vendor_id, vendor_name, location_from, location_from_area, car_model, add_on, fare, to_location, to_location_area, time, vendor_contact, vendor_cat) 
+      const sql = `INSERT INTO leads (date, vendor_id, vendor_name, location_from, location_from_area, 
+                   car_model, add_on, fare, to_location, to_location_area, time, vendor_contact, vendor_cat) 
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const values = [
         leadData.date, leadData.vendor_id, leadData.vendor_name, leadData.location_from,
@@ -20,125 +21,74 @@ const Leads = {
     }
   },
 
-  // Get all leads with pagination only (no filters)
-  getAllWithPagination: async (page, limit) => {
+  // Get all leads with pagination, search, and filtering
+  getAll: async ({ page, limit, search, receivedOn, tripDate }) => {
     try {
-      // Base query for counting total results
-      const countSql = `SELECT COUNT(*) as total FROM leads`;
-      const dataSql = `SELECT * FROM leads ORDER BY createdAt DESC LIMIT ?, ?`;
-      
-      // First get total count
-      const [countResult] = await pool.execute(countSql);
-      const totalCount = countResult[0].total;
+      // Build the main query
+      let sql = `SELECT * FROM leads WHERE 1=1`;
+      let countSql = `SELECT COUNT(*) as total FROM leads WHERE 1=1`;
+      let values = [];
+      let countValues = [];
+
+      // Add search conditions if search parameter exists
+      if (search && search.trim() !== '') {
+        const searchCondition = ` AND (
+          vendor_name LIKE ? OR 
+          vendor_contact LIKE ? OR 
+          location_from LIKE ? OR 
+          to_location LIKE ? OR 
+          vendor_cat LIKE ? OR
+          car_model LIKE ?
+        )`;
+        sql += searchCondition;
+        countSql += searchCondition;
+        
+        const searchPattern = `%${search}%`;
+        values.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+        countValues.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      }
+
+      // Filter by "Received On" date (createdAt)
+      if (receivedOn) {
+        const dateCondition = ` AND DATE(createdAt) = ?`;
+        sql += dateCondition;
+        countSql += dateCondition;
+        values.push(receivedOn);
+        countValues.push(receivedOn);
+      }
+
+      // Filter by "Trip Date" (date field)
+      if (tripDate) {
+        const tripDateCondition = ` AND DATE(date) = ?`;
+        sql += tripDateCondition;
+        countSql += tripDateCondition;
+        values.push(tripDate);
+        countValues.push(tripDate);
+      }
+
+      // Get total count for pagination
+      const [countRows] = await pool.execute(countSql, countValues);
+      const totalCount = countRows[0].total;
       const totalPages = Math.ceil(totalCount / limit);
 
-      // Get paginated data
-      const [rows] = await pool.execute(dataSql, [(page - 1) * limit, parseInt(limit)]);
-      
+      // Add sorting and pagination
+      sql += ` ORDER BY createdAt DESC LIMIT ?, ?`;
+      values.push((page - 1) * limit, parseInt(limit));
+
+      // Execute the main query
+      const [rows] = await pool.execute(sql, values);
+
       return {
-        leads: rows,
-        totalPages: totalPages,
-        totalCount: totalCount,
-        currentPage: page
+        data: rows,
+        pagination: {
+          totalCount,
+          totalPages,
+          currentPage: page,
+          limit
+        }
       };
     } catch (error) {
       throw new Error("Error fetching leads: " + error.message);
-    }
-  },
-
-  // Search leads by any column
-  searchLeads: async (searchTerm, page, limit) => {
-    try {
-      // Base query for counting total results with search
-      const countSql = `SELECT COUNT(*) as total FROM leads WHERE 
-                        vendor_name LIKE ? OR 
-                        vendor_contact LIKE ? OR 
-                        location_from LIKE ? OR 
-                        to_location LIKE ? OR 
-                        vendor_cat LIKE ? OR
-                        car_model LIKE ?`;
-      
-      const dataSql = `SELECT * FROM leads WHERE 
-                      vendor_name LIKE ? OR 
-                      vendor_contact LIKE ? OR 
-                      location_from LIKE ? OR 
-                      to_location LIKE ? OR 
-                      vendor_cat LIKE ? OR
-                      car_model LIKE ?
-                      ORDER BY createdAt DESC LIMIT ?, ?`;
-      
-      const searchPattern = `%${searchTerm}%`;
-      const searchValues = Array(6).fill(searchPattern);
-      
-      // First get total count
-      const [countResult] = await pool.execute(countSql, searchValues);
-      const totalCount = countResult[0].total;
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Get paginated data
-      const dataValues = [...searchValues, (page - 1) * limit, parseInt(limit)];
-      const [rows] = await pool.execute(dataSql, dataValues);
-      
-      return {
-        leads: rows,
-        totalPages: totalPages,
-        totalCount: totalCount,
-        currentPage: page
-      };
-    } catch (error) {
-      throw new Error("Error searching leads: " + error.message);
-    }
-  },
-
-  // Filter leads by received date (createdAt)
-  filterByReceivedDate: async (receivedDate, page, limit) => {
-    try {
-      // Base query for counting total results with date filter
-      const countSql = `SELECT COUNT(*) as total FROM leads WHERE DATE(createdAt) = ?`;
-      const dataSql = `SELECT * FROM leads WHERE DATE(createdAt) = ? ORDER BY createdAt DESC LIMIT ?, ?`;
-      
-      // First get total count
-      const [countResult] = await pool.execute(countSql, [receivedDate]);
-      const totalCount = countResult[0].total;
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Get paginated data
-      const [rows] = await pool.execute(dataSql, [receivedDate, (page - 1) * limit, parseInt(limit)]);
-      
-      return {
-        leads: rows,
-        totalPages: totalPages,
-        totalCount: totalCount,
-        currentPage: page
-      };
-    } catch (error) {
-      throw new Error("Error filtering leads by received date: " + error.message);
-    }
-  },
-
-  // Filter leads by trip date
-  filterByTripDate: async (tripDate, page, limit) => {
-    try {
-      // Base query for counting total results with trip date filter
-      const countSql = `SELECT COUNT(*) as total FROM leads WHERE date = ?`;
-      const dataSql = `SELECT * FROM leads WHERE date = ? ORDER BY createdAt DESC LIMIT ?, ?`;
-      
-      // First get total count
-      const [countResult] = await pool.execute(countSql, [tripDate]);
-      const totalCount = countResult[0].total;
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Get paginated data
-      const [rows] = await pool.execute(dataSql, [tripDate, (page - 1) * limit, parseInt(limit)]);
-      
-      return {
-        leads: rows,
-        totalPages: totalPages,
-        totalCount: totalCount,
-        currentPage: page
-      };
-    } catch (error) {
-      throw new Error("Error filtering leads by trip date: " + error.message);
     }
   },
 
@@ -156,7 +106,9 @@ const Leads = {
   // Update lead
   update: async (id, leadData) => {
     try {
-      const sql = `UPDATE leads SET date = ?, vendor_id = ?, vendor_name = ?, location_from = ?, location_from_area = ?, car_model = ?, add_on = ?, fare = ?, to_location = ?, to_location_area = ?, time = ?, vendor_contact = ?, vendor_cat = ? WHERE id = ?`;
+      const sql = `UPDATE leads SET date = ?, vendor_id = ?, vendor_name = ?, location_from = ?, 
+                   location_from_area = ?, car_model = ?, add_on = ?, fare = ?, to_location = ?, 
+                   to_location_area = ?, time = ?, vendor_contact = ?, vendor_cat = ? WHERE id = ?`;
       const values = [
         leadData.date, leadData.vendor_id, leadData.vendor_name, leadData.location_from,
         leadData.location_from_area, leadData.car_model, leadData.add_on, leadData.fare,

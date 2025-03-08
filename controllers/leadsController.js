@@ -10,153 +10,35 @@ exports.createLead = async (req, res) => {
   }
 };
 
-// Get all leads with pagination only (no filters)
-exports.getLeadsWithPagination = async (req, res) => {
+// Get all leads with search, filtering and pagination
+exports.getLeads = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search = "", receivedOn, tripDate } = req.query;
     
-    // Validate numeric inputs
+    // Validate pagination parameters
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     
     if (isNaN(pageNum) || isNaN(limitNum) || pageNum < 1 || limitNum < 1) {
       return res.status(400).json({ 
         success: false, 
-        message: "Invalid page or limit parameters. Both must be positive numbers."
+        message: "Invalid pagination parameters. Page and limit must be positive numbers." 
       });
     }
     
-    const result = await Leads.getAllWithPagination(pageNum, limitNum);
+    const result = await Leads.getAll({ 
+      page: pageNum, 
+      limit: limitNum, 
+      search, 
+      receivedOn, 
+      tripDate 
+    });
     
     res.status(200).json({
       success: true,
       message: "Leads retrieved successfully",
-      data: result.leads,
-      pagination: {
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-        totalCount: result.totalCount
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Search leads
-exports.searchLeads = async (req, res) => {
-  try {
-    const { term, page = 1, limit = 10 } = req.query;
-    
-    if (!term) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Search term is required."
-      });
-    }
-    
-    // Validate numeric inputs
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    
-    if (isNaN(pageNum) || isNaN(limitNum) || pageNum < 1 || limitNum < 1) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid page or limit parameters. Both must be positive numbers."
-      });
-    }
-    
-    const result = await Leads.searchLeads(term, pageNum, limitNum);
-    
-    res.status(200).json({
-      success: true,
-      message: "Search results retrieved successfully",
-      data: result.leads,
-      pagination: {
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-        totalCount: result.totalCount
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Filter by received date
-exports.filterByReceivedDate = async (req, res) => {
-  try {
-    const { date, page = 1, limit = 10 } = req.query;
-    
-    if (!date) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Received date is required."
-      });
-    }
-    
-    // Validate numeric inputs
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    
-    if (isNaN(pageNum) || isNaN(limitNum) || pageNum < 1 || limitNum < 1) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid page or limit parameters. Both must be positive numbers."
-      });
-    }
-    
-    const result = await Leads.filterByReceivedDate(date, pageNum, limitNum);
-    
-    res.status(200).json({
-      success: true,
-      message: "Leads filtered by received date successfully",
-      data: result.leads,
-      pagination: {
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-        totalCount: result.totalCount
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Filter by trip date
-exports.filterByTripDate = async (req, res) => {
-  try {
-    const { date, page = 1, limit = 10 } = req.query;
-    
-    if (!date) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Trip date is required."
-      });
-    }
-    
-    // Validate numeric inputs
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    
-    if (isNaN(pageNum) || isNaN(limitNum) || pageNum < 1 || limitNum < 1) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid page or limit parameters. Both must be positive numbers."
-      });
-    }
-    
-    const result = await Leads.filterByTripDate(date, pageNum, limitNum);
-    
-    res.status(200).json({
-      success: true,
-      message: "Leads filtered by trip date successfully",
-      data: result.leads,
-      pagination: {
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-        totalCount: result.totalCount
-      }
+      data: result.data,
+      pagination: result.pagination
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
