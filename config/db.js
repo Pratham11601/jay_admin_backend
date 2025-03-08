@@ -5,11 +5,10 @@ dotenv.config();
 
 // Create a MySQL connection pool
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "quick_cab",
-  waitForConnections: true,
+  host: "127.0.0.1",
+  user:  "root",
+  password:  "Sync@116",
+  database:  "sync_quickcab_db",
   connectionLimit: 10, // Max concurrent connections
   queueLimit: 0, // No limit for queued connections
 });
