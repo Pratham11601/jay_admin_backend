@@ -1,11 +1,10 @@
-const pool = require("../config/db");
+const pool = require("../config/db"); // Import your connection pool
 
 const Leads = {
-  // Create a new lead
+  // ✅ Create a new lead
   create: async (leadData) => {
     try {
-      const sql = `INSERT INTO leads (date, vendor_id, vendor_name, location_from, location_from_area, 
-                   car_model, add_on, fare, to_location, to_location_area, time, vendor_contact, vendor_cat) 
+      const sql = `INSERT INTO leads (date, vendor_id, vendor_name, location_from, location_from_area, car_model, add_on, fare, to_location, to_location_area, time, vendor_contact, vendor_cat) 
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const values = [
         leadData.date, leadData.vendor_id, leadData.vendor_name, leadData.location_from,
@@ -14,101 +13,64 @@ const Leads = {
         leadData.vendor_cat
       ];
 
-      const [result] = await pool.execute(sql, values);
+      const [result] = await pool.execute(sql, values); // Use pool.execute for query execution
       return { id: result.insertId, ...leadData };
     } catch (error) {
       throw new Error("Error creating lead: " + error.message);
     }
   },
 
-  // Get all leads with pagination, search, and filtering
+  // ✅ Get all leads with search and pagination
   getAll: async ({ page, limit, search, receivedOn, tripDate }) => {
     try {
-      // Build the main query
       let sql = `SELECT * FROM leads WHERE 1=1`;
-      let countSql = `SELECT COUNT(*) as total FROM leads WHERE 1=1`;
       let values = [];
-      let countValues = [];
 
-      // Add search conditions if search parameter exists
-      if (search && search.trim() !== '') {
-        const searchCondition = ` AND (
-          vendor_name LIKE ? OR 
-          vendor_contact LIKE ? OR 
-          location_from LIKE ? OR 
-          to_location LIKE ? OR 
-          vendor_cat LIKE ? OR
-          car_model LIKE ?
-        )`;
-        sql += searchCondition;
-        countSql += searchCondition;
-        
+      // 🔹 Search feature
+      if (search) {
+        sql += ` AND (vendor_name LIKE ? OR vendor_contact LIKE ? OR location_from LIKE ? OR to_location LIKE ? OR vendor_cat LIKE ?)`;
         const searchPattern = `%${search}%`;
-        values.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
-        countValues.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+        values.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
       }
 
-      // Filter by "Received On" date (createdAt)
+      // 🔹 Filter by "Received On"
       if (receivedOn) {
-        const dateCondition = ` AND DATE(createdAt) = ?`;
-        sql += dateCondition;
-        countSql += dateCondition;
+        sql += ` AND createdAt >= ?`;
         values.push(receivedOn);
-        countValues.push(receivedOn);
       }
 
-      // Filter by "Trip Date" (date field)
+      // 🔹 Filter by "Trip Date"
       if (tripDate) {
-        const tripDateCondition = ` AND DATE(date) = ?`;
-        sql += tripDateCondition;
-        countSql += tripDateCondition;
+        sql += ` AND date = ?`;
         values.push(tripDate);
-        countValues.push(tripDate);
       }
 
-      // Get total count for pagination
-      const [countRows] = await pool.execute(countSql, countValues);
-      const totalCount = countRows[0].total;
-      const totalPages = Math.ceil(totalCount / limit);
-
-      // Add sorting and pagination
+      // 🔹 Pagination
       sql += ` ORDER BY createdAt DESC LIMIT ?, ?`;
       values.push((page - 1) * limit, parseInt(limit));
 
-      // Execute the main query
-      const [rows] = await pool.execute(sql, values);
-
-      return {
-        data: rows,
-        pagination: {
-          totalCount,
-          totalPages,
-          currentPage: page,
-          limit
-        }
-      };
+      const [rows] = await pool.execute(sql, values); // Execute query
+      return rows;
     } catch (error) {
       throw new Error("Error fetching leads: " + error.message);
     }
   },
 
-  // Get lead by ID
+  // ✅ Get lead by ID
   getById: async (id) => {
     try {
       const sql = `SELECT * FROM leads WHERE id = ?`;
-      const [rows] = await pool.execute(sql, [id]);
+      const [rows] = await pool.execute(sql, [id]); // Execute query
       return rows.length > 0 ? rows[0] : null;
     } catch (error) {
       throw new Error("Error fetching lead by ID: " + error.message);
     }
   },
 
-  // Update lead
+  // ✅ Update lead
   update: async (id, leadData) => {
     try {
-      const sql = `UPDATE leads SET date = ?, vendor_id = ?, vendor_name = ?, location_from = ?, 
-                   location_from_area = ?, car_model = ?, add_on = ?, fare = ?, to_location = ?, 
-                   to_location_area = ?, time = ?, vendor_contact = ?, vendor_cat = ? WHERE id = ?`;
+      const sql = `UPDATE leads SET date = ?, vendor_id = ?, vendor_name = ?, location_from = ?, location_from_area = ?, car_model = ?, add_on = ?, fare = ?, to_location = ?, to_location_area = ?, time = ?, vendor_contact = ?, vendor_cat = ? WHERE id = ?`;
       const values = [
         leadData.date, leadData.vendor_id, leadData.vendor_name, leadData.location_from,
         leadData.location_from_area, leadData.car_model, leadData.add_on, leadData.fare,
@@ -116,18 +78,18 @@ const Leads = {
         leadData.vendor_cat, id
       ];
 
-      const [result] = await pool.execute(sql, values);
+      const [result] = await pool.execute(sql, values); // Execute query
       return result.affectedRows > 0 ? { message: "Lead updated successfully" } : null;
     } catch (error) {
       throw new Error("Error updating lead: " + error.message);
     }
   },
 
-  // Delete lead
+  // ✅ Delete lead
   delete: async (id) => {
     try {
       const sql = `DELETE FROM leads WHERE id = ?`;
-      const [result] = await pool.execute(sql, [id]);
+      const [result] = await pool.execute(sql, [id]); // Execute query
       return result.affectedRows > 0 ? { message: "Lead deleted successfully" } : null;
     } catch (error) {
       throw new Error("Error deleting lead: " + error.message);
