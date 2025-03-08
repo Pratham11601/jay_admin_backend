@@ -1,5 +1,25 @@
 const pool = require("../config/db"); // Import your connection pool
 
+// Helper function to parse and format dates properly
+const parseDateFilter = (dateString) => {
+  if (!dateString) return null;
+  
+  try {
+    // Handle DD/MM/YYYY format (from frontend)
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      // Return in MySQL format
+      return `${year}-${month}-${day}`;
+    }
+    
+    // If it's already in YYYY-MM-DD format, just return it
+    return dateString;
+  } catch (err) {
+    console.error("Error parsing date:", err);
+    return null;
+  }
+};
+
 const Leads = {
   // ✅ Create a new lead
   create: async (leadData) => {
@@ -33,25 +53,43 @@ const Leads = {
         values.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
       }
 
-      // 🔹 Filter by "Received On"
+      // 🔹 Filter by "Received On" - Updated to work with different date formats
       if (receivedOn) {
-        sql += ` AND createdAt >= ?`;
-        values.push(receivedOn);
+        const formattedDate = parseDateFilter(receivedOn);
+        if (formattedDate) {
+          // Convert to MySQL DATE format for comparison with DATETIME field
+          sql += ` AND DATE(createdAt) = ?`;
+          values.push(formattedDate);
+        }
       }
 
-      // 🔹 Filter by "Trip Date"
+      // 🔹 Filter by "Trip Date" - Updated to work with different date formats
       if (tripDate) {
-        sql += ` AND date = ?`;
-        values.push(tripDate);
+        const formattedDate = parseDateFilter(tripDate);
+        if (formattedDate) {
+          sql += ` AND date = ?`;
+          values.push(formattedDate);
+        }
       }
+
+      // Count total rows for pagination info
+      const [countResult] = await pool.execute(
+        `SELECT COUNT(*) as total FROM leads WHERE 1=1 ${sql.split('WHERE 1=1')[1].split('ORDER BY')[0]}`, 
+        values.slice(0, values.length - 2) // Remove pagination parameters
+      );
+      const totalCount = countResult[0].total;
 
       // 🔹 Pagination
       sql += ` ORDER BY createdAt DESC LIMIT ?, ?`;
       values.push((page - 1) * limit, parseInt(limit));
 
+      console.log("SQL Query:", sql); // Debug
+      console.log("Query Values:", values); // Debug
+
       const [rows] = await pool.execute(sql, values); // Execute query
-      return rows;
+      return { rows, totalCount };
     } catch (error) {
+      console.error("Database error:", error);
       throw new Error("Error fetching leads: " + error.message);
     }
   },

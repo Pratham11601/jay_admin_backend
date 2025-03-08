@@ -14,13 +14,26 @@ exports.createLead = async (req, res) => {
 exports.getLeads = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "", receivedOn, tripDate } = req.query;
-    const leads = await Leads.getAll({ page: parseInt(page), limit: parseInt(limit), search, receivedOn, tripDate });
+    
+    // Log incoming parameters for debugging
+    console.log("Request parameters:", { page, limit, search, receivedOn, tripDate });
+    
+    const result = await Leads.getAll({ 
+      page: parseInt(page), 
+      limit: parseInt(limit), 
+      search, 
+      receivedOn, 
+      tripDate 
+    });
+    
     res.status(200).json({
       success: true,
       message: "Leads retrieved successfully",
-      data: leads
+      data: result.rows,
+      totalCount: result.totalCount
     });
   } catch (error) {
+    console.error("Controller error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
