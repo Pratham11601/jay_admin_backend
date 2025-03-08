@@ -1,81 +1,65 @@
 const Leads = require("../models/leadsModel");
 
-// ✅ Get all leads with pagination
-exports.getAllLeads = (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
-
-  Leads.getTotalLeadsCount((err, countResult) => {
-    if (err) return res.status(500).json({ success: false, message: "Internal server error" });
-
-    Leads.getAllLeads(page, limit, (err, results) => {
-      if (err) return res.status(500).json({ success: false, message: "Internal server error" });
-
-      res.json({
-        success: true,
-        data: results,
-        totalCount: countResult[0].total,
-        currentPage: page,
-        totalPages: Math.ceil(countResult[0].total / limit),
-      });
-    });
-  });
+// ✅ Create a new lead
+exports.createLead = async (req, res) => {
+  try {
+    const lead = await Leads.create(req.body);
+    res.status(201).json({ success: true, message: "Lead added successfully", data: lead });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-// ✅ Search leads with pagination
-exports.searchLeads = (req, res) => {
-  const { search, page = 1, limit = 10 } = req.query;
-
-  if (!search) return res.status(400).json({ success: false, message: "Search term is required" });
-
-  Leads.getSearchCount(search, (err, countResult) => {
-    if (err) return res.status(500).json({ success: false, message: "Internal server error" });
-
-    Leads.searchLeads(search, page, limit, (err, results) => {
-      if (err) return res.status(500).json({ success: false, message: "Internal server error" });
-
-      res.json({
-        success: true,
-        data: results,
-        totalCount: countResult[0].total,
-        currentPage: page,
-        totalPages: Math.ceil(countResult[0].total / limit),
-      });
+// ✅ Get all leads with search and pagination
+exports.getLeads = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = "", receivedOn, tripDate } = req.query;
+    const leads = await Leads.getAll({ page: parseInt(page), limit: parseInt(limit), search, receivedOn, tripDate });
+    res.status(200).json({
+      success: true,
+      message: "Leads retrieved successfully",
+      data: leads
     });
-  });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-// ✅ Filter leads with pagination
-exports.filterLeads = (req, res) => {
-  const { receivedOn, tripDate, page = 1, limit = 10 } = req.query;
-
-  Leads.getFilterCount(receivedOn, tripDate, (err, countResult) => {
-    if (err) return res.status(500).json({ success: false, message: "Internal server error" });
-
-    Leads.filterLeads(receivedOn, tripDate, page, limit, (err, results) => {
-      if (err) return res.status(500).json({ success: false, message: "Internal server error" });
-
-      res.json({
-        success: true,
-        data: results,
-        totalCount: countResult[0].total,
-        currentPage: page,
-        totalPages: Math.ceil(countResult[0].total / limit),
-      });
-    });
-  });
-};
-
-// ✅ Delete a lead
-exports.deleteLead = (req, res) => {
-  const { id } = req.params;
-
-  Leads.deleteLead(id, (err, result) => {
-    if (err) return res.status(500).json({ success: false, message: "Internal server error" });
-
-    if (result.affectedRows === 0) {
+// ✅ Get lead by ID
+exports.getLeadById = async (req, res) => {
+  try {
+    const lead = await Leads.getById(req.params.id);
+    if (!lead) {
       return res.status(404).json({ success: false, message: "Lead not found" });
     }
+    res.status(200).json({ success: true, message: "Lead retrieved successfully", data: lead });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-    res.json({ success: true, message: "Lead deleted successfully" });
-  });
+// ✅ Update lead
+exports.updateLead = async (req, res) => {
+  try {
+    const result = await Leads.update(req.params.id, req.body);
+    if (!result) {
+      return res.status(404).json({ success: false, message: "Lead not found or no changes made" });
+    }
+    res.status(200).json({ success: true, message: "Lead updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ✅ Delete lead
+exports.deleteLead = async (req, res) => {
+  try {
+    const result = await Leads.delete(req.params.id);
+    if (!result) {
+      return res.status(404).json({ success: false, message: "Lead not found" });
+    }
+    res.status(200).json({ success: true, message: "Lead deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
