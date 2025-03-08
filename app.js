@@ -11,10 +11,9 @@ dotenv.config();
 
 const app = express();
 
-// 🔹 Middleware Configuration
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*", // Restrict origin via .env (Default: Allow all)
+    origin: "*", // Restrict origin via .env (Default: Allow all)
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })

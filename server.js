@@ -1,7 +1,7 @@
 require("dotenv").config(); // Load environment variables
 const app = require("./app");
 
-const PORT = process.env.PORT || 5000;
+const PORT =  5000;
 
 // Start the server
 const server = app.listen(PORT, () => {
