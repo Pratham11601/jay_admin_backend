@@ -1,6 +1,6 @@
 const Leads = require("../models/leadsModel");
 
-// ✅ Create a new lead
+// Create a new lead
 exports.createLead = async (req, res) => {
   try {
     const lead = await Leads.create(req.body);
@@ -10,22 +10,46 @@ exports.createLead = async (req, res) => {
   }
 };
 
-// ✅ Get all leads with search and pagination
+// Get all leads with search and pagination
 exports.getLeads = async (req, res) => {
   try {
     const { page = 1, limit = 10, search = "", receivedOn, tripDate } = req.query;
-    const leads = await Leads.getAll({ page: parseInt(page), limit: parseInt(limit), search, receivedOn, tripDate });
+    
+    // Validate numeric inputs
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    
+    if (isNaN(pageNum) || isNaN(limitNum) || pageNum < 1 || limitNum < 1) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid page or limit parameters. Both must be positive numbers."
+      });
+    }
+    
+    const result = await Leads.getAll({ 
+      page: pageNum, 
+      limit: limitNum, 
+      search, 
+      receivedOn, 
+      tripDate 
+    });
+    
     res.status(200).json({
       success: true,
       message: "Leads retrieved successfully",
-      data: leads
+      data: result.leads,
+      pagination: {
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
+        totalCount: result.totalCount
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ✅ Get lead by ID
+// Get lead by ID
 exports.getLeadById = async (req, res) => {
   try {
     const lead = await Leads.getById(req.params.id);
@@ -38,7 +62,7 @@ exports.getLeadById = async (req, res) => {
   }
 };
 
-// ✅ Update lead
+// Update lead
 exports.updateLead = async (req, res) => {
   try {
     const result = await Leads.update(req.params.id, req.body);
@@ -51,7 +75,7 @@ exports.updateLead = async (req, res) => {
   }
 };
 
-// ✅ Delete lead
+// Delete lead
 exports.deleteLead = async (req, res) => {
   try {
     const result = await Leads.delete(req.params.id);
