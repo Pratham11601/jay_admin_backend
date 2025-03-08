@@ -5,8 +5,8 @@ const path = require("path");
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+const BASE_URL =  `http://localhost:${PORT}`;
+var live_server = `https://quickcabpune.com/admin`;
 
 const options = {
   definition: {
@@ -21,7 +21,17 @@ const options = {
         url: "http://example.com",
       },
     },
-    servers: [{ url: BASE_URL }],
+       servers: [
+      {
+          description: 'Live Server',
+          url: live_server,
+      },
+      {
+          url: BASE_URL,
+          description: 'Local Server'
+      }
+  ],
+
     components: {
       securitySchemes: {
         bearerAuth: {
