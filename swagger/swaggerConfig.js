@@ -5,12 +5,8 @@ const path = require("path");
 
 dotenv.config();
 
-const PORT =  5000;
-const BASE_URL =  `http://localhost:${PORT}`;
-var live_server = `https://quickcabpune.com/admin`;
-
-
-
+const PORT = process.env.PORT || 5000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 const options = {
   definition: {
@@ -23,18 +19,7 @@ const options = {
         name: "Sync Solutions Pune"
       },
     },
-
-    servers: [
-      {
-          description: 'Live Server',
-          url: live_server,
-      },
-      {
-          url: BASE_URL,
-          description: 'Local Server'
-      }
-  ],
-
+    servers: [{ url: BASE_URL }],
     components: {
       securitySchemes: {
         bearerAuth: {
