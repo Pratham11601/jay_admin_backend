@@ -5,6 +5,7 @@ const path = require("path");
 
 dotenv.config();
 
+const PORT =  5000;
 const BASE_URL =  `http://localhost:${PORT}`;
 var live_server = `https://quickcabpune.com/admin`;
 
