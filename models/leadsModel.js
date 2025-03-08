@@ -20,56 +20,20 @@ const Leads = {
     }
   },
 
-  // Get all leads with search and pagination
-  getAll: async ({ page, limit, search, receivedOn, tripDate }) => {
+  // Get all leads with pagination only (no filters)
+  getAllWithPagination: async (page, limit) => {
     try {
       // Base query for counting total results
-      let countSql = `SELECT COUNT(*) as total FROM leads WHERE 1=1`;
-      let dataSql = `SELECT * FROM leads WHERE 1=1`;
-      let countValues = [];
-      let dataValues = [];
-
-      // Add search conditions to both queries
-      if (search) {
-        const searchCondition = ` AND (vendor_name LIKE ? OR vendor_contact LIKE ? OR location_from LIKE ? OR to_location LIKE ? OR vendor_cat LIKE ?)`;
-        countSql += searchCondition;
-        dataSql += searchCondition;
-        
-        const searchPattern = `%${search}%`;
-        // Add values for count query
-        countValues.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
-        // Add values for data query
-        dataValues.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
-      }
-
-      // Add date filters to both queries
-      if (receivedOn) {
-        const receivedOnCondition = ` AND DATE(createdAt) = ?`;
-        countSql += receivedOnCondition;
-        dataSql += receivedOnCondition;
-        countValues.push(receivedOn);
-        dataValues.push(receivedOn);
-      }
-
-      if (tripDate) {
-        const tripDateCondition = ` AND date = ?`;
-        countSql += tripDateCondition;
-        dataSql += tripDateCondition;
-        countValues.push(tripDate);
-        dataValues.push(tripDate);
-      }
-
+      const countSql = `SELECT COUNT(*) as total FROM leads`;
+      const dataSql = `SELECT * FROM leads ORDER BY createdAt DESC LIMIT ?, ?`;
+      
       // First get total count
-      const [countResult] = await pool.execute(countSql, countValues);
+      const [countResult] = await pool.execute(countSql);
       const totalCount = countResult[0].total;
       const totalPages = Math.ceil(totalCount / limit);
 
-      // Add pagination to data query
-      dataSql += ` ORDER BY createdAt DESC LIMIT ?, ?`;
-      dataValues.push((page - 1) * limit, parseInt(limit));
-
       // Get paginated data
-      const [rows] = await pool.execute(dataSql, dataValues);
+      const [rows] = await pool.execute(dataSql, [(page - 1) * limit, parseInt(limit)]);
       
       return {
         leads: rows,
@@ -79,6 +43,102 @@ const Leads = {
       };
     } catch (error) {
       throw new Error("Error fetching leads: " + error.message);
+    }
+  },
+
+  // Search leads by any column
+  searchLeads: async (searchTerm, page, limit) => {
+    try {
+      // Base query for counting total results with search
+      const countSql = `SELECT COUNT(*) as total FROM leads WHERE 
+                        vendor_name LIKE ? OR 
+                        vendor_contact LIKE ? OR 
+                        location_from LIKE ? OR 
+                        to_location LIKE ? OR 
+                        vendor_cat LIKE ? OR
+                        car_model LIKE ?`;
+      
+      const dataSql = `SELECT * FROM leads WHERE 
+                      vendor_name LIKE ? OR 
+                      vendor_contact LIKE ? OR 
+                      location_from LIKE ? OR 
+                      to_location LIKE ? OR 
+                      vendor_cat LIKE ? OR
+                      car_model LIKE ?
+                      ORDER BY createdAt DESC LIMIT ?, ?`;
+      
+      const searchPattern = `%${searchTerm}%`;
+      const searchValues = Array(6).fill(searchPattern);
+      
+      // First get total count
+      const [countResult] = await pool.execute(countSql, searchValues);
+      const totalCount = countResult[0].total;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      // Get paginated data
+      const dataValues = [...searchValues, (page - 1) * limit, parseInt(limit)];
+      const [rows] = await pool.execute(dataSql, dataValues);
+      
+      return {
+        leads: rows,
+        totalPages: totalPages,
+        totalCount: totalCount,
+        currentPage: page
+      };
+    } catch (error) {
+      throw new Error("Error searching leads: " + error.message);
+    }
+  },
+
+  // Filter leads by received date (createdAt)
+  filterByReceivedDate: async (receivedDate, page, limit) => {
+    try {
+      // Base query for counting total results with date filter
+      const countSql = `SELECT COUNT(*) as total FROM leads WHERE DATE(createdAt) = ?`;
+      const dataSql = `SELECT * FROM leads WHERE DATE(createdAt) = ? ORDER BY createdAt DESC LIMIT ?, ?`;
+      
+      // First get total count
+      const [countResult] = await pool.execute(countSql, [receivedDate]);
+      const totalCount = countResult[0].total;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      // Get paginated data
+      const [rows] = await pool.execute(dataSql, [receivedDate, (page - 1) * limit, parseInt(limit)]);
+      
+      return {
+        leads: rows,
+        totalPages: totalPages,
+        totalCount: totalCount,
+        currentPage: page
+      };
+    } catch (error) {
+      throw new Error("Error filtering leads by received date: " + error.message);
+    }
+  },
+
+  // Filter leads by trip date
+  filterByTripDate: async (tripDate, page, limit) => {
+    try {
+      // Base query for counting total results with trip date filter
+      const countSql = `SELECT COUNT(*) as total FROM leads WHERE date = ?`;
+      const dataSql = `SELECT * FROM leads WHERE date = ? ORDER BY createdAt DESC LIMIT ?, ?`;
+      
+      // First get total count
+      const [countResult] = await pool.execute(countSql, [tripDate]);
+      const totalCount = countResult[0].total;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      // Get paginated data
+      const [rows] = await pool.execute(dataSql, [tripDate, (page - 1) * limit, parseInt(limit)]);
+      
+      return {
+        leads: rows,
+        totalPages: totalPages,
+        totalCount: totalCount,
+        currentPage: page
+      };
+    } catch (error) {
+      throw new Error("Error filtering leads by trip date: " + error.message);
     }
   },
 
