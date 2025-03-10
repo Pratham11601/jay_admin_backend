@@ -1,6 +1,5 @@
 const cityModel = require("../models/cityModel");
 
-// Get all cities with search and pagination
 exports.getAllCities = async (req, res) => {
   try {
     const search = req.query.search ? req.query.search.trim() : "";

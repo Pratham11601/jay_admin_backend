@@ -1,6 +1,5 @@
 const db = require("../config/db");
 
-// Get all cities with search and pagination
 exports.getAllCities = async (search = "", page = 1, limit = 10) => {
   try {
     const offset = (page - 1) * limit;
@@ -13,13 +12,16 @@ exports.getAllCities = async (search = "", page = 1, limit = 10) => {
     }
 
     query += " ORDER BY city_id DESC LIMIT ? OFFSET ?";
-    params.push(Number(limit), Number(offset));
+    params.push(Number(limit), Number(offset)); // Ensure proper integer conversion
+
+    console.log("Executing query:", query, "Params:", params); // Debugging log
 
     const [cities] = await db.execute(query, params);
     const [[{ total }]] = await db.execute("SELECT FOUND_ROWS() AS total");
 
     return { total, cities };
   } catch (error) {
+    console.error("❌ Database Error:", error.message);
     throw new Error("Error fetching cities: " + error.message);
   }
 };
