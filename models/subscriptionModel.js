@@ -53,37 +53,16 @@ const Subscription = {
     return rows;
   },
 
-  // Find all subscriptions with pagination
-  async findAll(page, limit) {
-    // Ensure page and limit are integers
-    page = parseInt(page, 10) || 1;
-    limit = parseInt(limit, 10) || 10;
-    
-    if (page <= 0 || limit <= 0) {
-      throw new Error('Invalid page or limit parameters.');
-    }
-    
-    // Calculate the offset for pagination
-    const offset = (page - 1) * limit;
-    
-    // First get total count for pagination info
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM subscriptions');
-    const totalItems = countResult[0].total;
-    const totalPages = Math.ceil(totalItems / limit);
-    
-    // Then get the actual data with LIMIT
-    const [rows] = await pool.execute('SELECT * FROM subscriptions LIMIT ?, ?', [offset, limit]);
-    
-    return {
-      data: rows,
-      pagination: {
-        totalItems,
-        totalPages,
-        currentPage: page,
-        pageSize: limit
-      }
-    };
-  },
+ // Find all subscriptions without pagination
+async findAll() {
+  // Fetch all subscriptions from the database
+  const [rows] = await pool.execute('SELECT * FROM subscriptions');
+  
+  return {
+    data: rows
+  };
+}
+,
   
   // Get a specific subscription by ID
   async findById(id) {

@@ -138,19 +138,15 @@ const searchSubscription = async (req, res) => {
   }
 };
 
-// Get all subscriptions with pagination
+// Get all subscriptions
 const getSubscriptions = async (req, res) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-
-    const result = await Subscription.findAll(page, limit);
+    const result = await Subscription.findAll();
     
     return res.status(200).json({ 
       status: true, 
       message: 'Subscriptions retrieved successfully',
-      data: result.data,
-      pagination: result.pagination
+      data: result.data
     });
   } catch (err) {
     console.error('Get subscriptions error:', err);
@@ -160,6 +156,7 @@ const getSubscriptions = async (req, res) => {
     });
   }
 };
+
 
 // Get subscription by ID
 const getSubscriptionById = async (req, res) => {
