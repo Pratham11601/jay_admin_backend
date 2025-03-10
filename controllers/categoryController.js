@@ -5,6 +5,7 @@ exports.getAllCategories = async (req, res) => {
   try {
     let page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit) || 10;
+    // Ensure page and limit are positive numbers
 
     // Ensure page and limit are positive numbers
     if (page < 1 || limit < 1) {
