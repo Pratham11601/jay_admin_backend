@@ -41,6 +41,20 @@ router.get("/", cityController.getAllCities);
 
 /**
  * @swagger
+ * /api/cities/all:
+ *   get:
+ *     summary: Retrieve all cities without pagination
+ *     tags: [Cities]
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved list of all cities
+ *       500:
+ *         description: Server error while fetching cities
+ */
+router.get("/all", cityController.getAllCitiesWithoutPagination);
+
+/**
+ * @swagger
  * /api/cities/{city_id}:
  *   get:
  *     summary: Retrieve city details by ID
