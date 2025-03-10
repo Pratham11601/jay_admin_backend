@@ -1,91 +1,61 @@
 const db = require("../config/db");
 
-class Category {
-  static async getAll(search, page, limit) {
-    try {
-      // Ensure page and limit are integers
-      page = parseInt(page) || 1;
-      limit = parseInt(limit) || 10;
-      const offset = (page - 1) * limit;
+// Get all categories with pagination
+exports.getAllWithPagination = async (limit, offset) => {
+  try {
+    const query = `
+      SELECT SQL_CALC_FOUND_ROWS * FROM category 
+      ORDER BY id DESC 
+      LIMIT ? OFFSET ?;
+    `;
+    
+    const [categories] = await db.execute(query, [limit, offset]);
+    const [[{ total }]] = await db.execute("SELECT FOUND_ROWS() AS total");
 
-      let sql = "SELECT * FROM category";
-      let params = [];
-
-      if (search) {
-        sql += " WHERE cat_name LIKE ?";
-        params.push(`%${search}%`);
-      }
-
-      sql += " ORDER BY id DESC";
-      
-      // Handle pagination directly in the SQL string instead of using parameters
-      if (page && limit) {
-        sql += ` LIMIT ${offset}, ${limit}`;
-      }
-
-      const [categories] = await db.execute(sql, params);
-      return categories;
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    return { total, categories };
+  } catch (error) {
+    console.error("❌ Error fetching categories:", error.message);
+    throw new Error("Database error while fetching categories.");
   }
+};
 
-  static async getCount(search) {
-    try {
-      let sql = "SELECT COUNT(*) as total FROM category";
-      let params = [];
-
-      if (search) {
-        sql += " WHERE cat_name LIKE ?";
-        params.push(`%${search}%`);
-      }
-
-      const [result] = await db.execute(sql, params);
-      return result[0].total;
-    } catch (error) {
-      throw new Error(error.message);
-    }
+// Get category by ID
+exports.getById = async (id) => {
+  try {
+    const [rows] = await db.execute("SELECT * FROM category WHERE id = ?", [id]);
+    return rows.length > 0 ? rows[0] : null;
+  } catch (error) {
+    console.error(`❌ Error fetching category with ID ${id}:`, error.message);
+    throw new Error("Database error while fetching category.");
   }
+};
 
-  static async getById(id) {
-    try {
-      const sql = "SELECT * FROM category WHERE id = ?";
-      const [category] = await db.execute(sql, [id]);
-      return category.length > 0 ? category[0] : null;
-    } catch (error) {
-      throw new Error(error.message);
+// Add a new category with duplicate check
+exports.addCategory = async (cat_name) => {
+  try {
+    // Check if category already exists (case-insensitive)
+    const [existingCategory] = await db.execute("SELECT * FROM category WHERE LOWER(cat_name) = LOWER(?)", [cat_name]);
+    
+    if (existingCategory.length > 0) {
+      throw new Error("Category already exists");
     }
-  }
 
-  static async create(cat_name) {
-    try {
-      const sql = "INSERT INTO category (cat_name) VALUES (?)";
-      const [result] = await db.execute(sql, [cat_name]);
-      return result.insertId;
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    // Insert new category
+    const [result] = await db.execute("INSERT INTO category (cat_name) VALUES (?)", [cat_name]);
+    return result.insertId;
+  } catch (error) {
+    console.error("❌ Error adding category:", error.message);
+    throw new Error(error.message); // Pass error message to controller
   }
+};
 
-  static async update(id, cat_name) {
-    try {
-      const sql = "UPDATE category SET cat_name = ? WHERE id = ?";
-      const [result] = await db.execute(sql, [cat_name, id]);
-      return result.affectedRows > 0;
-    } catch (error) {
-      throw new Error(error.message);
-    }
+// Delete category by ID
+exports.deleteById = async (id) => {
+  try {
+    const [result] = await db.execute("DELETE FROM category WHERE id = ?", [id]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error(`❌ Error deleting category with ID ${id}:`, error.message);
+    throw new Error("Database error while deleting category.");
   }
-
-  static async delete(id) {
-    try {
-      const sql = "DELETE FROM category WHERE id = ?";
-      const [result] = await db.execute(sql, [id]);
-      return result.affectedRows > 0;
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  }
-}
-
-module.exports = Category;
+};

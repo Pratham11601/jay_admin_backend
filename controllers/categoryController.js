@@ -1,132 +1,86 @@
-const db = require("../config/db");
+const Category = require("../models/categoryModel");
 
+// Get all categories with pagination
 exports.getAllCategories = async (req, res) => {
   try {
-    let { search, page, limit } = req.query;
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
 
-    // Ensure page and limit are integers
-    page = parseInt(page) || 1;
-    limit = parseInt(limit) || 10;
+    // Ensure page and limit are positive numbers
+    if (page < 1 || limit < 1) {
+      return res.status(400).json({ success: false, message: "Page and limit must be positive integers" });
+    }
+
     const offset = (page - 1) * limit;
+    const { total, categories } = await Category.getAllWithPagination(limit, offset);
 
-    // First, get the total count
-    let countSql = "SELECT COUNT(*) as total FROM category";
-    let countParams = [];
-    
-    if (search) {
-      countSql += " WHERE cat_name LIKE ?";
-      countParams.push(`%${search}%`);
-    }
-    
-    const [countResult] = await db.execute(countSql, countParams);
-    const total = countResult[0].total;
-
-    // Then get the actual data with paging
-    let dataSql = "SELECT * FROM category";
-    let dataParams = [];
-
-    if (search) {
-      dataSql += " WHERE cat_name LIKE ?";
-      dataParams.push(`%${search}%`);
-    }
-
-    // Important: For MySQL prepared statements, LIMIT parameters must be integers
-    // Adding ORDER BY to sort by ID descending
-    dataSql += " ORDER BY id DESC";
-    
-    // Handle pagination differently to avoid MySQL statement parameter issues
-    if (page && limit) {
-      // Using prepared statement with placeholder values directly as integers, not via parameters
-      // This avoids the type conversion issues with MySQL's prepared statements
-      dataSql += ` LIMIT ${offset}, ${limit}`;
-    }
-
-    const [categories] = await db.execute(dataSql, dataParams);
-
-    res.json({
+    res.status(200).json({
       success: true,
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      data: categories,
+      data: categories || [], // Ensure data is always an array
     });
   } catch (error) {
-    console.error("Database error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Error fetching categories", 
-      error: error.message 
-    });
+    console.error("❌ Error fetching categories:", error.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
+// Get category by ID
 exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    const sql = "SELECT * FROM category WHERE id = ?";
-    const [category] = await db.execute(sql, [id]);
+    if (!id) return res.status(400).json({ success: false, message: "Category ID is required" });
 
-    if (category.length === 0) {
+    const category = await Category.getById(id);
+    if (!category) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    res.json({ success: true, data: category[0] });
+    res.status(200).json({ success: true, data: category });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error fetching category", error: error.message });
+    console.error(`❌ Error fetching category with ID ${req.params.id}:`, error.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-exports.createCategory = async (req, res) => {
+// Add new category with duplicate check
+exports.addCategory = async (req, res) => {
   try {
     const { cat_name } = req.body;
     if (!cat_name) {
       return res.status(400).json({ success: false, message: "Category name is required" });
     }
 
-    const sql = "INSERT INTO category (cat_name) VALUES (?)";
-    const [result] = await db.execute(sql, [cat_name]);
+    // Call model function to add category
+    const categoryId = await Category.addCategory(cat_name);
 
-    res.status(201).json({ success: true, message: "Category created successfully", id: result.insertId });
+    res.status(201).json({ success: true, message: "Category added successfully", categoryId });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error creating category", error: error.message });
+    console.error("❌ Error adding category:", error.message);
+    if (error.message === "Category already exists") {
+      return res.status(400).json({ success: false, message: "Category already exists" });
+    }
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-exports.updateCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { cat_name } = req.body;
-
-    if (!cat_name) {
-      return res.status(400).json({ success: false, message: "Category name is required" });
-    }
-
-    const sql = "UPDATE category SET cat_name = ? WHERE id = ?";
-    const [result] = await db.execute(sql, [cat_name, id]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: "Category not found" });
-    }
-
-    res.json({ success: true, message: "Category updated successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Error updating category", error: error.message });
-  }
-};
-
+// Delete category
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const sql = "DELETE FROM category WHERE id = ?";
-    const [result] = await db.execute(sql, [id]);
+    if (!id) return res.status(400).json({ success: false, message: "Category ID is required" });
 
-    if (result.affectedRows === 0) {
+    const success = await Category.deleteById(id);
+    if (!success) {
       return res.status(404).json({ success: false, message: "Category not found" });
     }
 
-    res.json({ success: true, message: "Category deleted successfully" });
+    res.status(200).json({ success: true, message: "Category deleted successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error deleting category", error: error.message });
+    console.error(`❌ Error deleting category with ID ${req.params.id}:`, error.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
