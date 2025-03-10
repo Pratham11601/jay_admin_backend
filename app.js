@@ -40,7 +40,7 @@ const subscriptionRoutes = require("./routes/subscriptionRoutes"); // Add subscr
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/vendor", vendorRoutes);
-app.use("/api/category", categoryRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/cities", cityRoutes);
 app.use("/api/sub-packages", subPackageRoutes);
 app.use("/api/help-support", helpSupportRoutes);
