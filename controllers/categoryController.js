@@ -4,11 +4,12 @@ exports.getAllCategories = async (req, res) => {
   try {
     let { search, page, limit } = req.query;
 
+    // Ensure page and limit are integers
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
     const offset = (page - 1) * limit;
 
-    // Count total records first
+    // First, get the total count
     let countSql = "SELECT COUNT(*) as total FROM category";
     let countParams = [];
     
@@ -20,20 +21,27 @@ exports.getAllCategories = async (req, res) => {
     const [countResult] = await db.execute(countSql, countParams);
     const total = countResult[0].total;
 
-    // Then get paginated data
-    let sql = "SELECT * FROM category";
-    let params = [];
+    // Then get the actual data with paging
+    let dataSql = "SELECT * FROM category";
+    let dataParams = [];
 
     if (search) {
-      sql += " WHERE cat_name LIKE ?";
-      params.push(`%${search}%`);
+      dataSql += " WHERE cat_name LIKE ?";
+      dataParams.push(`%${search}%`);
     }
 
-    sql += " ORDER BY id DESC LIMIT ?, ?";
-    // Convert offset and limit to integers to avoid MySQL statement errors
-    params.push(Number(offset), Number(limit));
+    // Important: For MySQL prepared statements, LIMIT parameters must be integers
+    // Adding ORDER BY to sort by ID descending
+    dataSql += " ORDER BY id DESC";
+    
+    // Handle pagination differently to avoid MySQL statement parameter issues
+    if (page && limit) {
+      // Using prepared statement with placeholder values directly as integers, not via parameters
+      // This avoids the type conversion issues with MySQL's prepared statements
+      dataSql += ` LIMIT ${offset}, ${limit}`;
+    }
 
-    const [categories] = await db.execute(sql, params);
+    const [categories] = await db.execute(dataSql, dataParams);
 
     res.json({
       success: true,

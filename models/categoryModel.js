@@ -3,6 +3,7 @@ const db = require("../config/db");
 class Category {
   static async getAll(search, page, limit) {
     try {
+      // Ensure page and limit are integers
       page = parseInt(page) || 1;
       limit = parseInt(limit) || 10;
       const offset = (page - 1) * limit;
@@ -15,8 +16,12 @@ class Category {
         params.push(`%${search}%`);
       }
 
-      sql += " ORDER BY id DESC LIMIT ?, ?";
-      params.push(Number(offset), Number(limit));
+      sql += " ORDER BY id DESC";
+      
+      // Handle pagination directly in the SQL string instead of using parameters
+      if (page && limit) {
+        sql += ` LIMIT ${offset}, ${limit}`;
+      }
 
       const [categories] = await db.execute(sql, params);
       return categories;
