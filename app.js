@@ -36,16 +36,25 @@ const cityRoutes = require("./routes/cityRoutes");
 const subPackageRoutes = require("./routes/subPackageRoutes");
 const helpSupportRoutes = require("./routes/helpSupportRoutes");
 const leadRoutes = require("./routes/leadsRoutes");
-const subscriptionRoutes = require("./routes/subscriptionRoutes"); // Add subscription routes
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
 
+// Define base API path prefix for admin routes
+const adminApiPrefix = "/admin/api";
+
+// Regular API routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/vendor", vendorRoutes);
-app.use("/api/categories", categoryRoutes);
 app.use("/api/cities", cityRoutes);
 app.use("/api/sub-packages", subPackageRoutes);
 app.use("/api/help-support", helpSupportRoutes);
 app.use("/api/leads", leadRoutes);
-app.use("/api/subscriptions", subscriptionRoutes); // Match the route prefix
+app.use("/api/subscriptions", subscriptionRoutes);
+
+// Admin-specific routes - match the frontend URL patterns
+app.use(`${adminApiPrefix}/category`, categoryRoutes); // Match frontend API_BASE_URL
+
+// Also add the route under the regular API path for backward compatibility
+app.use("/api/categories", categoryRoutes);
 
 // 🔹 Swagger API Documentation
 swaggerDocs(app);
