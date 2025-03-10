@@ -6,109 +6,69 @@ const categoryController = require("../controllers/categoryController");
  * @swagger
  * tags:
  *   name: Categories
- *   description: API endpoints for managing categories
+ *   description: API for managing product categories
  */
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     Category:
- *       type: object
- *       required:
- *         - cat_name
- *       properties:
- *         id:
- *           type: integer
- *           description: The auto-generated ID of the category
- *         cat_name:
- *           type: string
- *           description: The name of the category
- *       example:
- *         id: 1
- *         cat_name: "Cab"
- */
-
-/**
- * @swagger
- * /api/category:
+ * /categories:
  *   get:
- *     summary: Get all categories with pagination & search
+ *     summary: Get all categories with pagination
  *     tags: [Categories]
  *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Page number for pagination
- *         example: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Number of records per page
- *         example: 10
  *       - in: query
  *         name: search
  *         schema:
  *           type: string
- *         description: Search categories by name
- *         example: "Cab"
+ *         description: Search keyword for category name
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
  *     responses:
  *       200:
- *         description: Successfully retrieved all categories
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 total:
- *                   type: integer
- *                 page:
- *                   type: integer
- *                 limit:
- *                   type: integer
- *                 totalPages:
- *                   type: integer
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: "#/components/schemas/Category"
+ *         description: Successfully retrieved categories
+ *       500:
+ *         description: Error fetching categories
  */
 router.get("/", categoryController.getAllCategories);
 
 /**
  * @swagger
- * /api/category/{id}:
+ * /categories/{id}:
  *   get:
  *     summary: Get a category by ID
  *     tags: [Categories]
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: integer
- *         required: true
- *         description: ID of the category
+ *         description: The category ID
  *     responses:
  *       200:
- *         description: Category found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Category'
+ *         description: Successfully retrieved category
  *       404:
  *         description: Category not found
+ *       500:
+ *         description: Error fetching category
  */
 router.get("/:id", categoryController.getCategoryById);
 
 /**
  * @swagger
- * /api/category:
+ * /categories:
  *   post:
- *     summary: Add a new category
+ *     summary: Create a new category
  *     tags: [Categories]
  *     requestBody:
  *       required: true
@@ -116,38 +76,73 @@ router.get("/:id", categoryController.getCategoryById);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - cat_name
  *             properties:
  *               cat_name:
  *                 type: string
- *                 example: "Cab"
+ *                 example: "Electronics"
  *     responses:
  *       201:
- *         description: Category added successfully
+ *         description: Category created successfully
  *       400:
- *         description: Invalid input, missing required fields
+ *         description: Category name is required
+ *       500:
+ *         description: Error creating category
  */
-router.post("/", categoryController.addCategory);
+router.post("/", categoryController.createCategory);
 
 /**
  * @swagger
- * /api/category/{id}:
+ * /categories/{id}:
+ *   put:
+ *     summary: Update an existing category
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The category ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               cat_name:
+ *                 type: string
+ *                 example: "Updated Category"
+ *     responses:
+ *       200:
+ *         description: Category updated successfully
+ *       404:
+ *         description: Category not found
+ *       500:
+ *         description: Error updating category
+ */
+router.put("/:id", categoryController.updateCategory);
+
+/**
+ * @swagger
+ * /categories/{id}:
  *   delete:
  *     summary: Delete a category by ID
  *     tags: [Categories]
  *     parameters:
  *       - in: path
  *         name: id
+ *         required: true
  *         schema:
  *           type: integer
- *         required: true
- *         description: ID of the category to delete
+ *         description: The category ID
  *     responses:
  *       200:
  *         description: Category deleted successfully
  *       404:
  *         description: Category not found
+ *       500:
+ *         description: Error deleting category
  */
 router.delete("/:id", categoryController.deleteCategory);
 
