@@ -7,7 +7,7 @@ class Category {
       limit = parseInt(limit) || 10;
       const offset = (page - 1) * limit;
 
-      let sql = "SELECT * FROM categories";
+      let sql = "SELECT * FROM category";
       let params = [];
 
       if (search) {
@@ -27,7 +27,7 @@ class Category {
 
   static async getById(id) {
     try {
-      const sql = "SELECT * FROM categories WHERE id = ?";
+      const sql = "SELECT * FROM category WHERE id = ?";
       const [category] = await db.execute(sql, [id]);
       return category.length > 0 ? category[0] : null;
     } catch (error) {
@@ -37,7 +37,7 @@ class Category {
 
   static async create(cat_name) {
     try {
-      const sql = "INSERT INTO categories (cat_name) VALUES (?)";
+      const sql = "INSERT INTO category (cat_name) VALUES (?)";
       const [result] = await db.execute(sql, [cat_name]);
       return result.insertId;
     } catch (error) {
@@ -47,7 +47,7 @@ class Category {
 
   static async update(id, cat_name) {
     try {
-      const sql = "UPDATE categories SET cat_name = ? WHERE id = ?";
+      const sql = "UPDATE category SET cat_name = ? WHERE id = ?";
       const [result] = await db.execute(sql, [cat_name, id]);
       return result.affectedRows > 0;
     } catch (error) {
@@ -57,7 +57,7 @@ class Category {
 
   static async delete(id) {
     try {
-      const sql = "DELETE FROM categories WHERE id = ?";
+      const sql = "DELETE FROM category WHERE id = ?";
       const [result] = await db.execute(sql, [id]);
       return result.affectedRows > 0;
     } catch (error) {
