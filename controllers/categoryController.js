@@ -8,6 +8,19 @@ exports.getAllCategories = async (req, res) => {
     limit = parseInt(limit) || 10;
     const offset = (page - 1) * limit;
 
+    // Count total records first
+    let countSql = "SELECT COUNT(*) as total FROM category";
+    let countParams = [];
+    
+    if (search) {
+      countSql += " WHERE cat_name LIKE ?";
+      countParams.push(`%${search}%`);
+    }
+    
+    const [countResult] = await db.execute(countSql, countParams);
+    const total = countResult[0].total;
+
+    // Then get paginated data
     let sql = "SELECT * FROM category";
     let params = [];
 
@@ -16,14 +29,11 @@ exports.getAllCategories = async (req, res) => {
       params.push(`%${search}%`);
     }
 
-    sql += " LIMIT ?, ?";
-    params.push(offset, limit);
+    sql += " ORDER BY id DESC LIMIT ?, ?";
+    // Convert offset and limit to integers to avoid MySQL statement errors
+    params.push(Number(offset), Number(limit));
 
     const [categories] = await db.execute(sql, params);
-
-    const countQuery = "SELECT COUNT(*) as total FROM category";
-    const [countResult] = await db.execute(countQuery);
-    const total = countResult[0].total;
 
     res.json({
       success: true,
@@ -34,7 +44,12 @@ exports.getAllCategories = async (req, res) => {
       data: categories,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error fetching categories", error: error.message });
+    console.error("Database error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error fetching categories", 
+      error: error.message 
+    });
   }
 };
 
@@ -74,6 +89,10 @@ exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { cat_name } = req.body;
+
+    if (!cat_name) {
+      return res.status(400).json({ success: false, message: "Category name is required" });
+    }
 
     const sql = "UPDATE category SET cat_name = ? WHERE id = ?";
     const [result] = await db.execute(sql, [cat_name, id]);

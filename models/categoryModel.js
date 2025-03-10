@@ -15,11 +15,28 @@ class Category {
         params.push(`%${search}%`);
       }
 
-      sql += " LIMIT ?, ?";
-      params.push(offset, limit);
+      sql += " ORDER BY id DESC LIMIT ?, ?";
+      params.push(Number(offset), Number(limit));
 
       const [categories] = await db.execute(sql, params);
       return categories;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async getCount(search) {
+    try {
+      let sql = "SELECT COUNT(*) as total FROM category";
+      let params = [];
+
+      if (search) {
+        sql += " WHERE cat_name LIKE ?";
+        params.push(`%${search}%`);
+      }
+
+      const [result] = await db.execute(sql, params);
+      return result[0].total;
     } catch (error) {
       throw new Error(error.message);
     }
