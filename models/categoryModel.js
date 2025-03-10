@@ -19,6 +19,8 @@ exports.getAllWithPagination = async (limit, offset) => {
   }
 };
 
+
+
 // Get category by ID
 exports.getById = async (id) => {
   try {

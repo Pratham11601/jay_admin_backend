@@ -3,12 +3,13 @@ const cityModel = require("../models/cityModel");
 // Get all cities with search and pagination
 exports.getAllCities = async (req, res) => {
   try {
-    const search = req.query.search || "";
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search ? req.query.search.trim() : "";
+    const page = Number(req.query.page) > 0 ? Number(req.query.page) : 1;
+    const limit = Number(req.query.limit) > 0 ? Number(req.query.limit) : 10;
 
     const result = await cityModel.getAllCities(search, page, limit);
-    res.json({
+
+    return res.status(200).json({
       success: true,
       total: result.total,
       page,
@@ -16,9 +17,15 @@ exports.getAllCities = async (req, res) => {
       data: result.cities,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error fetching cities", error: error.message });
+    console.error("❌ Error fetching cities:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching cities",
+      error: error.message,
+    });
   }
 };
+
 
 // Get city by ID
 exports.getCityById = async (req, res) => {

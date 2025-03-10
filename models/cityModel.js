@@ -12,8 +12,8 @@ exports.getAllCities = async (search = "", page = 1, limit = 10) => {
       params.push(`%${search}%`);
     }
 
-    query += " LIMIT ? OFFSET ?";
-    params.push(parseInt(limit), offset);
+    query += " ORDER BY city_id DESC LIMIT ? OFFSET ?";
+    params.push(Number(limit), Number(offset));
 
     const [cities] = await db.execute(query, params);
     const [[{ total }]] = await db.execute("SELECT FOUND_ROWS() AS total");
@@ -23,6 +23,7 @@ exports.getAllCities = async (search = "", page = 1, limit = 10) => {
     throw new Error("Error fetching cities: " + error.message);
   }
 };
+
 
 // Get city by ID
 exports.getCityById = async (city_id) => {
